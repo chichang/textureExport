@@ -439,11 +439,15 @@ class TextureExportWindow():
         #texturePublish
         #submit to texturePublish
         if self.ui.processTextures_ComboBox.currentIndex == 2:
+
             print "submitting following path to texturePublish:"
-            publish_dirs = []
+
             for xmc in export_channel_List:
-                publish_dirs.append(os.path.split(xmc._exportPath)[0])
-            self.texturePublish(publish_dirs)
+
+                print "channel ", xmc.channelName, ": non-color is:", xmc.ncd
+                print "path submitted to farm is: ", os.path.split(xmc._exportPath)[0]
+
+                self.texturePublish(os.path.split(xmc._exportPath)[0], xmc.ncd)
 
             exp_message += "Exported Textures Submitted to farm!"+ "\n"
 
@@ -451,25 +455,28 @@ class TextureExportWindow():
         self.box = xMessage(exp_message)
         self.box.show()
 
-    def texturePublish(self, path):
-
-        #make sure passed list is not empty.
-        if len(path) == 0:
-            print "no valid path to submit ..."
-            return None
-
+    def texturePublish(self, path, ncd):
+        '''
+        submit to texturePublish.
+        '''
         ## ask for user input on asset name, use asset neme for now ...
         callList = ["texturePublish", "-a", str(mari.projects.current().name())]
 
-        for p in path:
-            callList.append("-p")
-            callList.append(str(p))
-            print p
+        if ncd  == True:
+                callList.append("-n")
+        elif ncd  == False:
+                callList.append("-c")
+        else:
+            pass
 
-        callList.append("-c")
-        callList.append("--np")
-        #print callList
+        callList.append(str(path))
+
+        callList.append("--convert")
+
+        print callList
+        #print su.runCommand(callList)
         su.runCommand(callList)
+
 
     def imageResolution(self, index):
         if index == 0:
@@ -596,6 +603,7 @@ class xLable(QtGui.QLabel):
         self.itemCul = itemCul
         self.setText(self.name)
 
+
 class ProgressDialog(QtGui.QDialog):
     instance = None
     def __init__(self):
@@ -630,7 +638,6 @@ class xNcdCheckBox(QtGui.QCheckBox):
         self.itemRow = itemRow
         self.itemCul = itemCul
         #self.setText(self.name)
-
 
     def configCheckState(self, comboText):
         if comboText in list(globals.CHANNEL_DEFAULTS):
