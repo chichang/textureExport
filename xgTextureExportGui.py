@@ -116,7 +116,7 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.processTextures_ComboBox.setObjectName("processTextures_ComboBox")
         self.processTextures_ComboBox.addItem("None")
         self.processTextures_ComboBox.addItem("Local process")
-        self.processTextures_ComboBox.addItem("Farm process")
+        #self.processTextures_ComboBox.addItem("Farm process")
 
         self.clearExpChan_CheckBox = QtGui.QCheckBox("Clear export channels", self.options_GroupBox)
         self.clearExpChan_CheckBox.setGeometry(QtCore.QRect(20, 130, 181, 23))
