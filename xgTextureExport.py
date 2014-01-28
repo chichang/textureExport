@@ -9,15 +9,16 @@ import subprocess
 from PythonQt import QtCore, QtGui
 from functools import partial
 import utils as imp_utils
-#reload(imp_utils)
+import timeit
+reload(imp_utils)
 import globals
-#reload(globals)
+reload(globals)
 import xgNewTypeGui
-#reload(xgNewTypeGui)
+reload(xgNewTypeGui)
 import xgTextureExportGui
-#reload(xgTextureExportGui)
+reload(xgTextureExportGui)
 import xMariChannel
-#reload (xMariChannel)
+reload (xMariChannel)
 
 #======================================================================
 #	UTIL
@@ -292,7 +293,6 @@ class TextureExportWindow():
         outFormat = self.ui.outFormat_ComboBox.currentText
         outRes = self.ui.resolution_ComboBox.currentIndex
 
-
         if rootDir == "" :
             mari.utils.message("Please select an output directory.")
             return
@@ -316,6 +316,7 @@ class TextureExportWindow():
         print "prepairing to export ..."
         print"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
+
         #=============X CHANNEL PREP=============#
         for row in range(0,channelCount):
 
@@ -337,7 +338,7 @@ class TextureExportWindow():
             textureVariation = channelVariationItem.text()
 
             #create xMariChannel object and store in the list
-            xmc = xMariChannel.X_MariChannel(channelName, channelType, channelAbbr, textureVersion, ncd, channelDepth, textureVariation)
+            xmc = xMariChannel.X_MariChannel_ST(channelName, channelType, channelAbbr, textureVersion, ncd, channelDepth, textureVariation)
             
             #fill in needed variables
             xmc._patchlist = mu.getAllPatchs()
@@ -371,7 +372,7 @@ class TextureExportWindow():
         channel_count = len(export_channel_List)
         print ("Exporting %s channels." % channel_count) 
         #calculate the progress bar stepSize 
-        prog_step_size = 100.0 / float(channel_count) 
+        prog_step_size = 100.0 / float(channel_count)
         prog_current_step = 0.0 
         #generate progress UI 
         ProgressDialog.instance = ProgressDialog()
@@ -380,13 +381,15 @@ class TextureExportWindow():
 
         #=============EXPORT=============#
 
+        #start time
+        startTime = timeit.default_timer()
+
         for xmc in export_channel_List:
 
             #print xChannel info
             xmc.printChannelInfo()
             #make prograss bar
             ProgressDialog.instance.progress_text.setText("Exporting..." + xmc.channelName)
-            #Processes events such as redrawing the screen and updating the GUI.
             mari.app.processEvents()
 
             #EXPORT
@@ -405,11 +408,14 @@ class TextureExportWindow():
             prog_step_size += prog_step_size
             print"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-        #close after progress UI 
-        ProgressDialog.instance.close() 
+        #close after progress UI
+        ProgressDialog.instance.close()
 
         #close the ui
         self.ui.reject()
+
+        stopTime = timeit.default_timer()
+        print "job run time: ", stopTime - startTime
 
 
         channelCheck = su.sameListItems(fail_channel_List,export_channel_List)
@@ -454,6 +460,7 @@ class TextureExportWindow():
 
         self.box = xMessage(exp_message)
         self.box.show()
+
 
     def texturePublish(self, path, ncd):
         '''
