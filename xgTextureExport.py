@@ -423,6 +423,9 @@ class TextureExportWindow():
             for chan in channelCheck:
                 export_channel_List.remove(chan)
 
+
+        #farmExport
+
         #show export message
         exp_message ="XXX    xgTextureExport    XXX" + "\n"+ "\n"
         exp_message +="XXX    SHOW: " + self.show + "\n"
@@ -445,15 +448,9 @@ class TextureExportWindow():
         #texturePublish
         #submit to texturePublish
         if self.ui.processTextures_ComboBox.currentIndex == 2:
-
             print "submitting following path to texturePublish:"
 
-            for xmc in export_channel_List:
-
-                print "channel ", xmc.channelName, ": non-color is:", xmc.ncd
-                print "path submitted to farm is: ", os.path.split(xmc._exportPath)[0]
-
-                self.texturePublish(os.path.split(xmc._exportPath)[0], xmc.ncd)
+            self.texturePublish(export_channel_List)
 
             exp_message += "Exported Textures Submitted to farm!"+ "\n"
 
@@ -462,21 +459,27 @@ class TextureExportWindow():
         self.box.show()
 
 
-    def texturePublish(self, path, ncd):
+    def texturePublish(self, export_channel_List):
         '''
         submit to texturePublish.
         '''
         ## ask for user input on asset name, use asset neme for now ...
+
         callList = ["texturePublish", "-a", str(mari.projects.current().name())]
 
-        if ncd  == True:
-                callList.append("-n")
-        elif ncd  == False:
-                callList.append("-c")
-        else:
-            pass
+        for xmc in export_channel_List:
 
-        callList.append(str(path))
+            print "channel ", xmc.channelName, ": non-color is:", xmc.ncd
+            print "path submitted to farm is: ", os.path.split(xmc._exportPath)[0]
+
+            if xmc.ncd  == True:
+                    callList.append("-n")
+            elif xmc.ncd  == False:
+                    callList.append("-c")
+            else:
+                pass
+
+            callList.append(str(os.path.split(xmc._exportPath)[0]))
 
         callList.append("--convert")
 

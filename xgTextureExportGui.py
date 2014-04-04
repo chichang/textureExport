@@ -97,8 +97,7 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.outFormat_ComboBox.setObjectName("outFormat_ComboBox")
         self.outFormat_ComboBox.addItem("exr")
         self.outFormat_ComboBox.addItem("tif")
-        #self.outFormat_ComboBox.addItem("psd")
-        self.outFormat_ComboBox.setCurrentIndex(0)
+        self.outFormat_ComboBox.setCurrentIndex(1)
 
         self.resolution_ComboBox = QtGui.QComboBox(self.options_GroupBox)
         self.resolution_ComboBox.setToolTip("define output texture resolution.")
@@ -116,7 +115,7 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.processTextures_ComboBox.setObjectName("processTextures_ComboBox")
         self.processTextures_ComboBox.addItem("None")
         self.processTextures_ComboBox.addItem("Local process")
-        #self.processTextures_ComboBox.addItem("Farm process")
+        self.processTextures_ComboBox.addItem("Farm process")
 
         self.clearExpChan_CheckBox = QtGui.QCheckBox("Clear export channels", self.options_GroupBox)
         self.clearExpChan_CheckBox.setGeometry(QtCore.QRect(20, 130, 181, 23))
