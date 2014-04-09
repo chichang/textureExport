@@ -86,7 +86,7 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.resolution_Label.setObjectName("resolution_Label")
 
         self.processTextures_Label = QtGui.QLabel("process textures:", self.options_GroupBox)
-        self.processTextures_Label.setGeometry(QtCore.QRect(20, 100, 121, 21))
+        self.processTextures_Label.setGeometry(QtCore.QRect(20, 130, 121, 21))
         self.processTextures_Label.setObjectName("processTextures_Label")
 
         ##=======Options=======##
@@ -109,19 +109,28 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.resolution_ComboBox.addItem("mid (2K)")
         self.resolution_ComboBox.addItem("low (1K)")
 
-        self.processTextures_ComboBox = QtGui.QComboBox(self.options_GroupBox)
-        self.processTextures_ComboBox.setToolTip("define textures processing method.")
-        self.processTextures_ComboBox.setGeometry(QtCore.QRect(135, 100, 105, 25))
-        self.processTextures_ComboBox.setObjectName("processTextures_ComboBox")
-        self.processTextures_ComboBox.addItem("None")
-        self.processTextures_ComboBox.addItem("Local process")
-        self.processTextures_ComboBox.addItem("Farm process")
-
         self.clearExpChan_CheckBox = QtGui.QCheckBox("Clear export channels", self.options_GroupBox)
-        self.clearExpChan_CheckBox.setGeometry(QtCore.QRect(20, 130, 181, 23))
+        self.clearExpChan_CheckBox.setGeometry(QtCore.QRect(20, 100, 181, 23))
         self.clearExpChan_CheckBox.setChecked(False)
         self.clearExpChan_CheckBox.setObjectName("clearExpChan_CheckBox")
         self.clearExpChan_CheckBox.setToolTip("delete the flattened channels after export.")
+
+
+
+        self.processTextures_ComboBox = QtGui.QComboBox(self.options_GroupBox)
+        self.processTextures_ComboBox.setToolTip("define textures processing method.")
+        self.processTextures_ComboBox.setGeometry(QtCore.QRect(135, 130, 105, 25))
+        self.processTextures_ComboBox.setObjectName("processTextures_ComboBox")
+        self.processTextures_ComboBox.addItem("None")
+        self.processTextures_ComboBox.addItem("Local process")
+        #self.processTextures_ComboBox.addItem("Farm process")
+
+        self.texturePublish_CheckBox = QtGui.QCheckBox("Publish farm Textures", self.options_GroupBox)
+        self.texturePublish_CheckBox.setToolTip("process textures on the farm via texturePublish. \n (convert only will not publish.)")
+        self.texturePublish_CheckBox.setGeometry(QtCore.QRect(20, 160, 181, 23))
+        self.texturePublish_CheckBox.setCheckable(False)
+        self.texturePublish_CheckBox.setObjectName("texturePublish_CheckBox")
+
 
         '''
         self.linear_CheckBox = QtGui.QCheckBox("Local process textures.", self.options_GroupBox)
@@ -129,12 +138,6 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.linear_CheckBox.setGeometry(QtCore.QRect(20, 130, 181, 23))
         #self.linear_CheckBox.setChecked(True)
         self.linear_CheckBox.setObjectName("linear_CheckBox")
-
-        self.texturePublish_CheckBox = QtGui.QCheckBox("Farm process textures.", self.options_GroupBox)
-        self.texturePublish_CheckBox.setToolTip("process textures on the farm via texturePublish. \n (convert only will not publish.)")
-        self.texturePublish_CheckBox.setGeometry(QtCore.QRect(20, 160, 181, 23))
-        #self.texturePublish_CheckBox.setCheckable(False)
-        self.texturePublish_CheckBox.setObjectName("texturePublish_CheckBox")
 
         self.publish_CheckBox = QtGui.QCheckBox("Publish After Export", self.options_GroupBox)
         self.publish_CheckBox.setGeometry(QtCore.QRect(20, 190, 181, 23))
@@ -194,8 +197,13 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.cancel_Button = xgPushButton("cancel_Button", "Cancel", 1)
         self.cancel_Button.setMinimumSize(QtCore.QSize(0, 45))
         self.exportButton_HBoxLayout.addWidget(self.cancel_Button)
+
+        self.exportPatch_Button = xgPushButton("exportPatch_Button", "Export Selected Patches", 1)
+        self.exportPatch_Button.setMinimumSize(QtCore.QSize(200, 45))
+        self.exportButton_HBoxLayout.addWidget(self.exportPatch_Button)
+
         self.export_Button = xgPushButton("export_Button", "Export", 0)
-        self.export_Button.setMinimumSize(QtCore.QSize(400, 45))
+        self.export_Button.setMinimumSize(QtCore.QSize(200, 45))
         self.exportButton_HBoxLayout.addWidget(self.export_Button)
 
         self.bottom_VBoxLayout.addLayout(self.exportButton_HBoxLayout)
@@ -214,7 +222,7 @@ class xgPushButton(QtGui.QPushButton):
         self.setToolTip(self.tooltip)
         
         if (self.bnScheme == 0):
-            styleSheet = "QPushButton{background-color: rgb(50, 200, 255); color: rgb(50,50,50)}"
+            styleSheet = "QPushButton{background-color: rgb(50, 200, 185); color: rgb(50,50,50)}"
 
         elif (self.bnScheme == 1):
             styleSheet = "QPushButton{background-color: rgb(80, 80, 80); color: rgb(200,200,200)}"

@@ -6,10 +6,49 @@ import os
 import sys
 sys.path.insert(0, "/USERS/chichang/tools/mari/textureExport/")
 import shlex
-import utils as imp_utils
+import xgUtils as imp_utils
 import xgTextureExport
 reload(xgTextureExport)
 reload(imp_utils)
+
+
+
+
+
+
+import mari
+from PythonQt.QtCore import QObject
+
+# ------------------------------------------------------------------------------
+def connect_wrap(signal, response):
+    """Helper function to connect a Qt or Mari signal to a Python callable.
+    
+    If the signal connection fails, make sure the signal and response are of the
+    correct types and take compatible parameters.
+    
+    @param signal: A signal (event) to connect with a function call.
+    @param response: A Python callable object, such as a function, to call when
+                     the signal is triggered.
+    @raise TypeError: Raised if one of the parameters is of the wrong type.
+    @return: True or False to indicate whether the connection succeeded.
+    """
+    if not callable(response):
+        raise TypeError(str(response) + " is not callable.")
+
+    Result = False
+    # PySide version
+    if hasattr(signal, "connect"):
+        Result = signal.connect(response)
+    # Old PySide version
+    if hasattr(signal, "__self__"):
+        Result = QObject.connect(signal.__self__, signal.__name__, response)
+    
+    if Result==False:
+        mari.app.log("Failed to connect {0}.{1} to {2}".format(signal.__self__, signal.__name__, response))
+    
+    return Result
+
+
 
 #======================================================================
 #	VARS
@@ -114,14 +153,29 @@ def addGothamMenu():
 	mari.menus.addSeparator("MainWindow/"+menuName)
 	mari.menus.addAction(retainBufferOn, "MainWindow/"+menuName)
 
-	#connect signal callbacks
-	connect(mari.canvases.paintBuffer().aboutToBake, preBake)
-	connect(mari.canvases.paintBuffer().baked, postBake)
+	mari_version_minor = mari.app.version().minor()
 
+	if mari_version_minor == 6:
+		connect_wrap(mari.canvases.paintBuffer().aboutToBake, preBake)
+		connect_wrap(mari.canvases.paintBuffer().baked, postBake)
+
+	elif mari_version_minor == 5:
+		connect(mari.canvases.paintBuffer().aboutToBake, preBake)
+		connect(mari.canvases.paintBuffer().baked, postBake)
 #======================================================================
 #   ADD MENU
 #======================================================================
+
+
+
+
+
+
+
+
+
+
 if __name__=="__main__":
-	#addGothamMenu()
+	addGothamMenu()
 	print "Mr.X Tools Added to Menu."
 	showTextureExportGUI()

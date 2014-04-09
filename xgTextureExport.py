@@ -4,11 +4,12 @@
 #======================
 import os
 import sys
+import re
 import mari
 import subprocess
 from PythonQt import QtCore, QtGui
 from functools import partial
-import utils as imp_utils
+import xgUtils as imp_utils
 import timeit
 reload(imp_utils)
 import globals
@@ -19,20 +20,23 @@ import xgTextureExportGui
 reload(xgTextureExportGui)
 import xMariChannel
 reload (xMariChannel)
+import textureProcess
+reload(textureProcess)
 
 #======================================================================
 #	UTIL
 #======================================================================
+udimTag = "<UDIM>"
+udimTemplate = "$UDIM"
+
 debug = 0
-
 g_export_cancelled = None
-
 mu = imp_utils.ccMariUtil()
 su = imp_utils.ccSysUtil(os.getenv("SHOW"), os.getenv("SHOT"))
-
 #======================================================================
 #   WINDOW
 #======================================================================
+
 
 def debugMsg(message):
     if debug == 1:
@@ -50,6 +54,7 @@ class TextureExportWindow():
     #===========================#
     NEW_VER = "v001"
     DEFAULT_VARIATION = "N/A"
+    MAX_CPU = 8
     #===========================#
     in_export_list_chan=[]
 
@@ -84,6 +89,7 @@ class TextureExportWindow():
         self.ui.browseButton.connect("clicked()", self.browseForFolder)
         self.ui.cancel_Button.connect("clicked()", self.ui.reject)
         self.ui.export_Button.connect("clicked()", self.export)
+        self.ui.exportPatch_Button.connect("clicked()", self.exportPatches)
         self.ui.addChannel_Button.connect("clicked()", self.addChannel)
         self.ui.removeChannel_Button.connect("clicked()", self.removeChannel)
         self.ui.exportPathLineEdit.connect("textChanged(QString)", self.exportPathUpdate)
@@ -272,7 +278,15 @@ class TextureExportWindow():
         if debug: print latestVer
         if debug: print comboBox.typeAbbr
 
-    def export(self):
+
+    def exportPatches(self):
+        if len(mu.getSelectedPatchs()) > 0:
+            self.export(patches = True)
+        else:
+            mu.messageBox("No Patches Seleced.")
+            return
+
+    def export(self, patches = False):
         '''
         export!
         '''
@@ -280,7 +294,7 @@ class TextureExportWindow():
         #since textureManager assumes all exr are linear. if submit to farm. tifs' only.
         if self.ui.processTextures_ComboBox.currentIndex == 2:
             if self.ui.outFormat_ComboBox.currentText != "tif":
-                mari.utils.message("Farm convert supports tif only.")
+                mu.messageBox("Farm convert supports tif only.")
                 return
 
         export_channel_List = []
@@ -294,13 +308,13 @@ class TextureExportWindow():
         outRes = self.ui.resolution_ComboBox.currentIndex
 
         if rootDir == "" :
-            mari.utils.message("Please select an output directory.")
+            mu.messageBox("Please select an output directory.")
             return
 
         channelCount = self.ui.exportChannelsList_tableWidget.rowCount
 
         if (channelCount == 0):
-            mari.utils.message("Nothing to export ...")
+            mu.messageBox("Nothing to export ...")
             return
 
         #check if the export path is not in the SHOT directory.
@@ -355,7 +369,6 @@ class TextureExportWindow():
 
             #generate name and export path
             xmc.exportName()
-            
             #move this to export loop so create dir before export but not all at once
             xmc.exportPath(rootDir)
 
@@ -389,16 +402,17 @@ class TextureExportWindow():
             #print xChannel info
             xmc.printChannelInfo()
             #make prograss bar
-            ProgressDialog.instance.progress_text.setText("Exporting..." + xmc.channelName)
+            ProgressDialog.instance.progress_text.setText("Exporting  " + xmc.channelName  +  "  ...")
             mari.app.processEvents()
 
             #EXPORT
-            error = xmc.export()
+            exported = xmc.export(patches = patches)
 
             #if error
-            if error:
+            if not exported:
                 print "error exporting image:" ,error
                 fail_channel_List.append(xmc)
+                export_channel_List.remove(xmc)
 
             elif g_export_cancelled: 
                 raise UserCancelledException()
@@ -407,6 +421,22 @@ class TextureExportWindow():
             ProgressDialog.instance.pbar.setValue(prog_step_size)
             prog_step_size += prog_step_size
             print"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+        #process textures.
+        #todo: replace this with the pallate.
+        ProgressDialog.instance.progress_text.setText("Processing Textures ...")
+        mari.app.processEvents()
+        texturesToProcess = dict()
+        for xmc in export_channel_List:
+            if (xmc._localConvert == True):
+                for texture in xmc._exportedTextures:
+                    texturesToProcess[texture] = xmc.ncd
+                    #hard set format for now since each export job will have the same format.
+                    processOutFormat = xmc._outFormat
+
+        #print texturesToProcess
+        if len(texturesToProcess) > 0 :
+            textureProcess.processTextures(texturesToProcess, xmc._outFormat, self.MAX_CPU)
 
         #close after progress UI
         ProgressDialog.instance.close()
@@ -418,6 +448,8 @@ class TextureExportWindow():
         print "job run time: ", stopTime - startTime
 
 
+
+        #post export check.
         channelCheck = su.sameListItems(fail_channel_List,export_channel_List)
         if len(channelCheck) != 0:
             for chan in channelCheck:
@@ -463,29 +495,32 @@ class TextureExportWindow():
         '''
         submit to texturePublish.
         '''
-        ## ask for user input on asset name, use asset neme for now ...
-
-        callList = ["texturePublish", "-a", str(mari.projects.current().name())]
-
+        ##todo: ask for user input on asset name, use asset neme for now ...
+        #callList = ["texturePublish", "-a", str(mari.projects.current().name())]
+        callString = "texturePublish -a " + str(mari.projects.current().name())
         for xmc in export_channel_List:
 
             print "channel ", xmc.channelName, ": non-color is:", xmc.ncd
             print "path submitted to farm is: ", os.path.split(xmc._exportPath)[0]
 
             if xmc.ncd  == True:
-                    callList.append("-n")
+                callString += " -n"
             elif xmc.ncd  == False:
-                    callList.append("-c")
+                callString += " -c"
             else:
                 pass
 
-            callList.append(str(os.path.split(xmc._exportPath)[0]))
+            callString += " " + re.sub(udimTag, "*", str(xmc._exportPath))
+            #re.sub(udimTag, "*", str(self._exportPath))
 
-        callList.append("--convert")
+        callString += " --convert"
 
-        print callList
+        if self.ui.texturePublish_CheckBox.isChecked():
+            callString += " --publish"
+
+        print callString
         #print su.runCommand(callList)
-        su.runCommand(callList)
+        su.runCommand(callString)
 
 
     def imageResolution(self, index):
@@ -618,17 +653,22 @@ class ProgressDialog(QtGui.QDialog):
     instance = None
     def __init__(self):
         super(ProgressDialog, self).__init__()
-        self.setWindowTitle('Exporting...')
+        self.setWindowTitle('Exporting Textures ...')
+
+        self.setEnabled(True)
+        self.resize(350, 120)
+
         #set layout
         self.v_layout = QtGui.QVBoxLayout()
         self.setLayout(self.v_layout)
         #create cancel button & connect
         self.cancel_button = QtGui.QPushButton("Cancel")
         mari.utils.connect(self.cancel_button.clicked, lambda: self.cancel())
+
         #create other widgets
         self.pbar = QtGui.QProgressBar(self)
         self.progress_text = QtGui.QLabel(self)
-        self.progress_text.setText('Exporting...')
+        self.progress_text.setText('Exporting Textures ...')
         self.pbar.setValue(0)
         
         #add widgets
@@ -714,7 +754,7 @@ class NewTextureTypeWindow():
             error = "please select texture data type."
 
         if error != "":
-            mari.utils.message(error)
+            mu.messageBox(error)
             return
 
         self.ui.accept()

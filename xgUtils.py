@@ -5,6 +5,7 @@ import os
 import sys
 import re
 from types import ListType, TupleType
+from PythonQt import QtGui
 import subprocess
 import shlex
 
@@ -35,17 +36,26 @@ class ccSysUtil:
 	    """
 	    Runs a command-line command
 	    """
+
+	    mycmd=subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	    output, error=mycmd.communicate()
+	    while not mycmd.wait():
+	    	# do stuff
+	    	return 0
+
+
+
 	    #if not isList(cmd):
 	        #cmd = shlex.split(cmd)
-	    opts = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-	    if env:
-	        opts.update(env=env)
-	    if stdin:
-	        opts.update(stdin=subprocess.PIPE)
-	        stdout, stderr=subprocess.Popen(cmd, **opts).communicate(stdin)
-	    else :
-	        stdout, stderr=subprocess.Popen(cmd, **opts).communicate()
-	    return stdout, stderr
+	    #opts = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+	    #if env:
+	    #    opts.update(env=env)
+	    #if stdin:
+	    #    opts.update(stdin=subprocess.PIPE)
+	    #    stdout, stderr=subprocess.Popen(cmd, **opts).communicate(stdin)
+	    #else :
+	    #    stdout, stderr=subprocess.Popen(cmd, **opts).communicate()
+	    #return stdout, stderr
 
 	def isList(self, item):
 	    """
@@ -191,17 +201,30 @@ class ccMariUtil:
 		'''
 		check current project state.
 		'''
+		messageBox = QtGui.QMessageBox(parent=None, title="Message.")
+
 		if mari.projects.current() is None:
-			mari.utils.message("Please open a project.")
+
+			self.messageBox("Please open a project.")
+
+
 			return False
+
 		geo = mari.geo.current()
 		if geo is None:
-			mari.utils.message("Please select an object to export texture from.")
+
+			self.messageBox("Please select an object to export texture from.")
+
 			return False
 		#if geo.currentChannel().currentLayer() == None:
 		#	mari.utils.message("No channels to get paint from.")
 		#	return False
 		return True
+
+	def messageBox(self, message):
+	    messageBox = QtGui.QMessageBox(parent=None)
+	    messageBox.setText(message)
+	    messageBox.exec_()
 
 	def setUserMariDir(self):
 		'''
@@ -240,6 +263,7 @@ class ccMariUtil:
 				selectedList.append(patch.udim())
 			else:
 				pass
+		return selectedList
 
 	def getAllPatchs(self):
 		'''
