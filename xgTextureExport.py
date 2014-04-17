@@ -663,7 +663,9 @@ class ProgressDialog(QtGui.QDialog):
         self.setLayout(self.v_layout)
         #create cancel button & connect
         self.cancel_button = QtGui.QPushButton("Cancel")
-        mari.utils.connect(self.cancel_button.clicked, lambda: self.cancel())
+
+        #todo: fix PySide ... utils not working
+        #mari.utils.connect(self.cancel_button.clicked, lambda: self.cancel())
 
         #create other widgets
         self.pbar = QtGui.QProgressBar(self)

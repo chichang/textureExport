@@ -38,7 +38,7 @@ class Ui_xgNewTypeGUI(QtGui.QDialog):
 
         self.ok_button = QtGui.QPushButton("OK", self.centralwidget)
         self.ok_button.setMinimumSize(QtCore.QSize(0, 45))
-        self.ok_button.setStyleSheet("QPushButton{background-color: rgb(50, 200, 255); color: rgb(50,50,50)}")
+        self.ok_button.setStyleSheet("QPushButton{background-color: rgb(50, 200, 185); color: rgb(50,50,50)}")
         self.ok_button.setObjectName("ok_button")
         self.main_GridLayout.addWidget(self.ok_button, 8, 2, 1, 1)
 
