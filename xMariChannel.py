@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import mari
+import json
 from PythonQt import QtCore, QtGui
 from globals import *
 import xgUtils as imp_utils
@@ -24,6 +25,7 @@ udimTemplate = "$UDIM"
 xUserName = os.getenv("USERNAME")
 xAsset = os.getenv("SHOT")
 xShow = os.getenv("SHOW")
+chanInfoFile = "chanInfo.json"
 
 #======================================================================
 #	Mair Class
@@ -56,6 +58,7 @@ class X_MariChannel_ST():
 		self._localConvert = None
 		self._patchlist = []
 		self._exportName = None
+		self._exportTypePath = None
 		self._exportPath = None
 		self._obj = None
 		self._exportedTextures = []
@@ -138,7 +141,12 @@ class X_MariChannel_ST():
 		#check if export name is avaluable
 		if self._exportName:
 
-			exportVersionDir = os.path.join(rootPath, self.channelType, self.textureVersion)
+			#root dir for texture type
+			exportTypeDir = os.path.join(rootPath, self.channelType)
+			self._exportTypePath = exportTypeDir
+
+			exportVersionDir = os.path.join(exportTypeDir, self.textureVersion)
+
 			print "export directory for " + self.channelName + " is: " + exportVersionDir
 			print "creating directory ..."
 
@@ -161,6 +169,31 @@ class X_MariChannel_ST():
 		print "export path for " + self.channelName + " is: " + self._exportPath
 		print"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
+	def updateMetaData(self):
+		'''
+		update channel metadata before export.
+		'''
+		#TODO: instead of grabbing the channel. inherite it?
+		channelToUpdate = self._obj.channel(self.channelName)
+		#check and create channel metadate
+		print "updateing " + self.channelName + " channel metadata."
+		channelToUpdate.setMetadata("channelType", self.channelType)
+		channelToUpdate.setMetadata("textureVariation", self.textureVariation)
+
+	def updateChanInfo(self):
+		'''
+		update channel info json.
+		'''
+		chanInfoToUpdate = os.path.join(self._exportTypePath, chanInfoFile)
+		print "updating channel info: " + chanInfoToUpdate
+
+		channelInfo = dict()
+		channelInfo.update(channelAbbr=self.channelAbbr)
+		channelInfo.update(ncd=self.ncd)
+
+		with open(chanInfoToUpdate, 'w') as outfile:
+			json.dump(channelInfo, outfile)
+
 
 	def export(self, patches = False):
 
@@ -170,6 +203,11 @@ class X_MariChannel_ST():
 
 		print"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 		print "Exporting: " + self.channelName + "\n"
+
+		#update channel metadata.
+		self.updateMetaData()
+		#update channel info.
+		self.updateChanInfo()
 
 		#if there is only one "paintable" layer in the channel. export the layer.
 		if mu.channelLayerCount(self.channelName) == 1:

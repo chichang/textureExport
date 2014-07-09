@@ -317,6 +317,23 @@ class ccMariUtil:
 		chanCount = len(chan.layerList())
 		return chanCount
 
+	def getChannelMetadata(self, chanName):
+		'''
+		retrun channel Metadata as dict.
+		'''
+		geo = mari.geo.current()
+		chan = geo.channel(chanName)
+		metadatas = chan.metadataNames()
+		metadataDict = dict()
+		if metadatas:
+			for m in metadatas:
+				metadataDict[m]=chan.metadata(m)
+			return metadataDict
+		else:
+			print "no metadatas found."
+			return None
+
+
 	def getChannelColorSpace(self,chanName):
 		pass
 

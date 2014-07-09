@@ -6,6 +6,7 @@ import os
 import sys
 import re
 import mari
+import json
 import subprocess
 from PythonQt import QtCore, QtGui
 from functools import partial
@@ -23,11 +24,14 @@ reload (xMariChannel)
 import textureProcess
 reload(textureProcess)
 
+__version__ = '1.21'
+
 #======================================================================
 #	UTIL
 #======================================================================
 udimTag = "<UDIM>"
 udimTemplate = "$UDIM"
+chanInfoFile = "chanInfo.json"
 
 debug = 0
 g_export_cancelled = None
@@ -98,7 +102,7 @@ class TextureExportWindow():
         #set ui title
         self.show = os.environ.get("SHOW", None)
         self.shot = os.environ.get("SHOT", None)
-        self.ui.setWindowTitle("X Texture Export: "+self.show+" | "+self.shot)
+        self.ui.setWindowTitle("X Texture Export"+__version__+":"+self.show+" | "+self.shot)
 
         #set export chan list to empty
         self.in_export_list_chan=[]
@@ -135,10 +139,60 @@ class TextureExportWindow():
 
         self.in_export_list_chan=[]
 
+    def parseChanInfo(self, itemRow):
+        '''
+        this parses the chan info and update the table items accordingly.
+        '''
+        #find which json to parse based on current setting.
+        print itemRow
+        #ncdCheckText = 16
+        #self.dataCheckBox = xNcdCheckBox(ncdCheckText, itemRow, self.CHAN_DEPTH_COL)
+        #self.ui.exportChannelsList_tableWidget.setCellWidget(itemRow,self.dataCheckBox.itemCul, self.dataCheckBox)
+        ## make sure all the needed data is set before start exporting
+
+        channelCombo = self.ui.exportChannelsList_tableWidget.cellWidget(itemRow, self.CHAN_TYPE_COL)
+        chennelComboIndex = channelCombo.currentIndex
+        channelType = channelCombo.itemText(chennelComboIndex)
+        channelDepthCheckText = self.ui.exportChannelsList_tableWidget.cellWidget(itemRow, self.CHAN_DEPTH_COL)
+
+        exportPath = self.ui.exportPathLineEdit.text
+        chanInfoFilePath = os.path.join(exportPath, channelType, chanInfoFile)
+        print chanInfoFilePath
+
+        if not os.path.exists(chanInfoFilePath):
+            print "no channel info file found."
+            return
+
+        #parse json
+        try:
+            channelData = open(chanInfoFilePath)
+            data = json.load(channelData)
+
+            channelCombo.typeAbbr = data["channelAbbr"]
+            channelDepthCheckText.setChecked(data["ncd"])
+
+            for name, path in data.iteritems():
+                print name, path
+
+        except:
+            print "Error reading channel info file!"
+            return
+
+
+
+        #info for each channel
+        #channelName = channelLabel.text
+        #channelType = channelCombo.itemText(chennelComboIndex)
+        #channelAbbr = channelCombo.typeAbbr
+        #ncd =  channelDepthCheckText.isChecked()
+
+        if debug: print channelCombo.typeAbbr
+
 
     def addChannel(self):
         '''
         add selected channel to export table widget and setup inital col content.
+        initalize with channel metadata if found.
         '''
         selected_chan = [item.text() for item in self.ui.channelsList_ListWidget.selectedItems()]
         # disable column sorting temporarily, this makes sure that Qt doesn't
@@ -160,16 +214,31 @@ class TextureExportWindow():
 
                 exportPath = self.ui.exportPathLineEdit.text
 
+                #get channel metadata if exist to init combobox and variation text.
+                metaType = None
+                metaVar = None
+                chanMetadata = mu.getChannelMetadata(chan)
+                if chanMetadata:
+                #[u'textureVariation', u'channelType'] metaType=None, metaVar=None
+                    if "channelType" in chanMetadata.keys():
+                        metaType = chanMetadata["channelType"]
+                    if "textureVariation" in chanMetadata.keys():
+                        metaVar = chanMetadata["textureVariation"]
+
                 #init cell item
                 self.chanNameItem = xLable(chan, currentRow, self.CHAN_NAME_COL)
-                self.chanTypeCombo = xComboBox(chan, currentRow, self.CHAN_TYPE_COL, exportPath)
-
+                self.chanTypeCombo = xComboBox(chan, currentRow, self.CHAN_TYPE_COL, exportPath, metaType=metaType)
                 self.dataCheckBox = xNcdCheckBox(ncdCheckText, currentRow, self.CHAN_DEPTH_COL)
+
                 self.dataCheckBox.configCheckState(self.chanTypeCombo.itemText(self.chanTypeCombo.currentIndex))
-                self.texVariationhItem = xTableItem(self.DEFAULT_VARIATION, currentRow, self.TEXT_VARIATION_COL)
+                if metaVar:
+                    self.texVariationhItem = xTableItem(metaVar, currentRow, self.TEXT_VARIATION_COL)
+                else:
+                    self.texVariationhItem = xTableItem(self.DEFAULT_VARIATION, currentRow, self.TEXT_VARIATION_COL)
                 
                 #check if there is an existing version for the texture type
                 latestVer = su.getNewVersion(exportPath, self.chanTypeCombo.currentText)
+                if debug: print "latestVer:", latestVer
 
                 if not latestVer:
                     self.versionLabel = xLable(self.NEW_VER)
@@ -189,8 +258,10 @@ class TextureExportWindow():
 
                 self.in_export_list_chan.append(chan)
 
-                currentRow = currentRow+1
+                #update row abbr and ncd
+                self.parseChanInfo(currentRow)
 
+                currentRow = currentRow+1
 
     def removeChannel(self):
         '''
@@ -217,15 +288,21 @@ class TextureExportWindow():
         '''
         #update comboBox attr
         comboBox.name = QString
+
         #get the current export path
         exportPath = self.ui.exportPathLineEdit.text
-        if debug: print "changeddd! update version!!!!", QString, itemRow
+        if debug: print "changeddd! update version!!!!", QString, comboBox.itemRow
 
         #update object values
+        #====================
+        # DEFAULT (globals)
+        #====================
         if QString in globals.CHANNEL_DEFAULTS:
             comboBox.typeAbbr = globals.CHANNEL_DEFAULTS[QString]["abbr"]
             checkBox.configCheckState(QString)
-
+        #====================
+        # NEW (user input)
+        #====================
         #if selected in New. ask for input
         elif QString == "New...":
             #get existing types
@@ -256,12 +333,25 @@ class TextureExportWindow():
 
             else:
                 if debug: print "cancel create new type."
-                comboBox.configChannelType()
-                pass
 
+                #comboBox.configChannelType()
+
+                pass
+        #====================
+        # AUTO CONFIF
+        #====================
         else:
-            comboBox.configChannelType(setItem=False)
-            checkBox.configCheckState(QString)
+            pass
+            #comboBox.configChannelType(setItem=False)
+            #checkBox.configCheckState(QString)
+
+
+        #====================
+        # JSON OVERRIDE
+        #====================
+        self.parseChanInfo(comboBox.itemRow)
+
+
 
         #get the latest version
         latestVer = su.getNewVersion(exportPath, QString)
@@ -490,10 +580,10 @@ class TextureExportWindow():
         self.box = xMessage(exp_message)
         self.box.show()
 
-
+    ##OUT OF DATE.
     def texturePublish(self, export_channel_List):
         '''
-        submit to texturePublish.
+        submit to texturePublish. OUT OF DATE.
         '''
         ##todo: ask for user input on asset name, use asset neme for now ...
         #callList = ["texturePublish", "-a", str(mari.projects.current().name())]
@@ -565,7 +655,7 @@ class xComboBox(QtGui.QComboBox):
     channel type combo box.
     this class also holds information that will be used at export time.
     '''
-    def __init__(self, name, itemRow, itemCul, exportDir=None):
+    def __init__(self, name, itemRow, itemCul, exportDir=None, metaType=None):
         super(xComboBox ,self).__init__()
 
         self.exportDir = exportDir
@@ -573,6 +663,7 @@ class xComboBox(QtGui.QComboBox):
         self.itemRow = itemRow
         self.itemCul = itemCul
         self.types = list(globals.CHANNEL_DEFAULTS)
+        self.metaType = metaType
         #==========================================
         self.typeAbbr = None
         self.newType = None
@@ -600,6 +691,15 @@ class xComboBox(QtGui.QComboBox):
         self.configChannelType()
 
     def configChannelType(self, setItem = True):
+
+        if self.metaType:
+            for index in range(self.count-1):
+                if self.itemText(index) == self.metaType:
+                    self.setCurrentIndex(index)
+                    return
+                else:
+                    pass
+
         for texType in globals.CHANNEL_DEFAULTS:
             for key in globals.CHANNEL_DEFAULTS[texType]["channels"]:
                 if key in self.name.lower():
@@ -613,6 +713,7 @@ class xComboBox(QtGui.QComboBox):
                     self.typeAbbr = globals.CHANNEL_DEFAULTS[texType]["abbr"]
                     self.setStyle(1)
                     return True
+
 
         if debug: print "unknown type."
 

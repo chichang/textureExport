@@ -111,7 +111,7 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
 
         self.clearExpChan_CheckBox = QtGui.QCheckBox("Clear export channels", self.options_GroupBox)
         self.clearExpChan_CheckBox.setGeometry(QtCore.QRect(20, 100, 181, 23))
-        self.clearExpChan_CheckBox.setChecked(False)
+        self.clearExpChan_CheckBox.setChecked(True)
         self.clearExpChan_CheckBox.setObjectName("clearExpChan_CheckBox")
         self.clearExpChan_CheckBox.setToolTip("delete the flattened channels after export.")
 
@@ -125,11 +125,11 @@ class Ui_xgTextureExportGUI(QtGui.QDialog):
         self.processTextures_ComboBox.addItem("Local process")
         #self.processTextures_ComboBox.addItem("Farm process")
 
-        self.texturePublish_CheckBox = QtGui.QCheckBox("Publish farm Textures", self.options_GroupBox)
-        self.texturePublish_CheckBox.setToolTip("process textures on the farm via texturePublish. \n (convert only will not publish.)")
-        self.texturePublish_CheckBox.setGeometry(QtCore.QRect(20, 160, 181, 23))
-        self.texturePublish_CheckBox.setCheckable(False)
-        self.texturePublish_CheckBox.setObjectName("texturePublish_CheckBox")
+        #self.texturePublish_CheckBox = QtGui.QCheckBox("Publish farm Textures", self.options_GroupBox)
+        #self.texturePublish_CheckBox.setToolTip("process textures on the farm via texturePublish. \n (convert only will not publish.)")
+        #self.texturePublish_CheckBox.setGeometry(QtCore.QRect(20, 160, 181, 23))
+        #self.texturePublish_CheckBox.setCheckable(False)
+        #self.texturePublish_CheckBox.setObjectName("texturePublish_CheckBox")
 
 
         '''
