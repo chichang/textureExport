@@ -144,7 +144,7 @@ class TextureExportWindow():
         this parses the chan info and update the table items accordingly.
         '''
         #find which json to parse based on current setting.
-        print itemRow
+        #print itemRow
         #ncdCheckText = 16
         #self.dataCheckBox = xNcdCheckBox(ncdCheckText, itemRow, self.CHAN_DEPTH_COL)
         #self.ui.exportChannelsList_tableWidget.setCellWidget(itemRow,self.dataCheckBox.itemCul, self.dataCheckBox)
@@ -157,10 +157,10 @@ class TextureExportWindow():
 
         exportPath = self.ui.exportPathLineEdit.text
         chanInfoFilePath = os.path.join(exportPath, channelType, chanInfoFile)
-        print chanInfoFilePath
+        #print chanInfoFilePath
 
         if not os.path.exists(chanInfoFilePath):
-            print "no channel info file found."
+            if debug: print "no channel info file found."
             return
 
         #parse json
@@ -171,8 +171,8 @@ class TextureExportWindow():
             channelCombo.typeAbbr = data["channelAbbr"]
             channelDepthCheckText.setChecked(data["ncd"])
 
-            for name, path in data.iteritems():
-                print name, path
+            #for name, path in data.iteritems():
+                #print name, path
 
         except:
             print "Error reading channel info file!"

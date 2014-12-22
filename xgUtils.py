@@ -330,7 +330,7 @@ class ccMariUtil:
 				metadataDict[m]=chan.metadata(m)
 			return metadataDict
 		else:
-			print "no metadatas found."
+			#print "no metadatas found."
 			return None
 
 
